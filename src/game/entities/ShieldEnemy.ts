@@ -4,6 +4,7 @@
  */
 import { Enemy, EnemyConfigData } from './Enemy'
 import { EnemyType, Direction } from '../../types/game'
+import { EnemyState } from '../../types/enemy'
 import { ENEMY } from '../config/GameConstants'
 import { Bullet } from './Bullet'
 import { eventBus, GameEvents } from '../../utils/EventBus'
@@ -40,7 +41,7 @@ export class ShieldEnemy extends Enemy {
    * @param amount 伤害值
    */
   takeDamage(amount: number): void {
-    if (this.state === 'dead') return
+    if (this.state === EnemyState.DEAD) return
 
     // 如果护盾激活，先消耗护盾
     if (this.shieldActive && this.shieldHealth > 0) {
