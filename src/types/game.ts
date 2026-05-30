@@ -40,6 +40,11 @@ export enum EnemyType {
   SOLDIER = 'soldier',
   MACHINE_GUNNER = 'machine_gunner',
   JUMPER = 'jumper',
+  FLAME = 'flame',
+  SNIPER = 'sniper',
+  BOMBER = 'bomber',
+  FLYER = 'flyer',
+  SHIELD = 'shield',
 }
 
 /** 游戏配置接口 */

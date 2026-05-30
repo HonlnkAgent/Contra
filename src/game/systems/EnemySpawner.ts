@@ -9,7 +9,12 @@ import { Enemy } from '../entities/Enemy'
 import { SoldierEnemy } from '../entities/SoldierEnemy'
 import { MachineGunnerEnemy } from '../entities/MachineGunnerEnemy'
 import { JumperEnemy } from '../entities/JumperEnemy'
-import { GAME_HEIGHT, WORLD_WIDTH } from '../config/GameConstants'
+import { FlameEnemy } from '../entities/FlameEnemy'
+import { SniperEnemy } from '../entities/SniperEnemy'
+import { BomberEnemy } from '../entities/BomberEnemy'
+import { FlyerEnemy } from '../entities/FlyerEnemy'
+import { ShieldEnemy } from '../entities/ShieldEnemy'
+import { GAME_HEIGHT, WORLD_WIDTH, ENEMY } from '../config/GameConstants'
 
 /** 生成配置接口 */
 interface SpawnConfig {
@@ -39,6 +44,22 @@ export class EnemySpawner {
     [EnemyType.SOLDIER, 60],
     [EnemyType.MACHINE_GUNNER, 30],
     [EnemyType.JUMPER, 10],
+  ])
+
+  /** 已解锁的敌人类型 */
+  private unlockedEnemyTypes: Set<EnemyType> = new Set([
+    EnemyType.SOLDIER,
+    EnemyType.MACHINE_GUNNER,
+    EnemyType.JUMPER,
+  ])
+
+  /** 解锁阈值 */
+  private unlockThresholds: Map<EnemyType, number> = new Map([
+    [EnemyType.BOMBER, ENEMY.BOMBER.UNLOCK_SCORE],
+    [EnemyType.FLAME, ENEMY.FLAME.UNLOCK_SCORE],
+    [EnemyType.SNIPER, ENEMY.SNIPER.UNLOCK_SCORE],
+    [EnemyType.FLYER, ENEMY.FLYER.UNLOCK_SCORE],
+    [EnemyType.SHIELD, ENEMY.SHIELD.UNLOCK_SCORE],
   ])
 
   /** 敌人实体管理 */
@@ -135,6 +156,50 @@ export class EnemySpawner {
           150 + Math.random() * 100
         )
         break
+      case EnemyType.FLAME:
+        enemy = new FlameEnemy(
+          this.scene,
+          spawnX,
+          spawnY,
+          100 + Math.random() * 100,
+          this.enemyBullets
+        )
+        break
+      case EnemyType.SNIPER:
+        enemy = new SniperEnemy(
+          this.scene,
+          spawnX,
+          spawnY,
+          80 + Math.random() * 50,
+          this.enemyBullets
+        )
+        break
+      case EnemyType.BOMBER:
+        enemy = new BomberEnemy(
+          this.scene,
+          spawnX,
+          spawnY,
+          150 + Math.random() * 100
+        )
+        break
+      case EnemyType.FLYER:
+        enemy = new FlyerEnemy(
+          this.scene,
+          spawnX,
+          spawnY,
+          200 + Math.random() * 100,
+          this.enemyBullets
+        )
+        break
+      case EnemyType.SHIELD:
+        enemy = new ShieldEnemy(
+          this.scene,
+          spawnX,
+          spawnY,
+          100 + Math.random() * 100,
+          this.enemyBullets
+        )
+        break
       default:
         enemy = new SoldierEnemy(
           this.scene,
@@ -158,6 +223,9 @@ export class EnemySpawner {
    * @param score 当前分数
    */
   updateDifficulty(score: number): void {
+    // 检查解锁新敌人类型
+    this.checkEnemyUnlocks(score)
+
     // 根据分数计算难度等级
     const newDifficulty = Math.floor(score / 1000) * this.difficultyIncreaseRate + 1
     if (newDifficulty > this.difficulty) {
@@ -189,19 +257,69 @@ export class EnemySpawner {
   }
 
   /**
+   * 检查解锁新敌人类型
+   * @param score 当前分数
+   */
+  private checkEnemyUnlocks(score: number): void {
+    for (const [enemyType, threshold] of this.unlockThresholds) {
+      if (score >= threshold && !this.unlockedEnemyTypes.has(enemyType)) {
+        this.unlockedEnemyTypes.add(enemyType)
+      }
+    }
+  }
+
+  /**
    * 更新敌人类型权重
    */
   private updateEnemyTypeWeights(): void {
+    // 基础权重
+    const baseWeights = new Map<EnemyType, number>([
+      [EnemyType.SOLDIER, 60],
+      [EnemyType.MACHINE_GUNNER, 30],
+      [EnemyType.JUMPER, 10],
+    ])
+
+    // 根据难度调整基础权重
     if (this.difficulty >= 3) {
-      this.enemyTypeWeights.set(EnemyType.SOLDIER, 40)
-      this.enemyTypeWeights.set(EnemyType.MACHINE_GUNNER, 40)
-      this.enemyTypeWeights.set(EnemyType.JUMPER, 20)
+      baseWeights.set(EnemyType.SOLDIER, 40)
+      baseWeights.set(EnemyType.MACHINE_GUNNER, 40)
+      baseWeights.set(EnemyType.JUMPER, 20)
     }
     if (this.difficulty >= 5) {
-      this.enemyTypeWeights.set(EnemyType.SOLDIER, 30)
-      this.enemyTypeWeights.set(EnemyType.MACHINE_GUNNER, 40)
-      this.enemyTypeWeights.set(EnemyType.JUMPER, 30)
+      baseWeights.set(EnemyType.SOLDIER, 30)
+      baseWeights.set(EnemyType.MACHINE_GUNNER, 40)
+      baseWeights.set(EnemyType.JUMPER, 30)
     }
+
+    // 添加已解锁的高级敌人类型
+    const advancedTypes = [
+      EnemyType.FLAME,
+      EnemyType.SNIPER,
+      EnemyType.BOMBER,
+      EnemyType.FLYER,
+      EnemyType.SHIELD,
+    ]
+
+    let advancedWeight = 0
+    for (const enemyType of advancedTypes) {
+      if (this.unlockedEnemyTypes.has(enemyType)) {
+        // 每个高级敌人类型分配10%权重
+        baseWeights.set(enemyType, 10)
+        advancedWeight += 10
+      }
+    }
+
+    // 如果有高级敌人，按比例减少基础敌人的权重
+    if (advancedWeight > 0) {
+      const reductionFactor = (100 - advancedWeight) / 100
+      for (const [type, weight] of baseWeights) {
+        if (!advancedTypes.includes(type)) {
+          baseWeights.set(type, Math.floor(weight * reductionFactor))
+        }
+      }
+    }
+
+    this.enemyTypeWeights = baseWeights
   }
 
   /**
@@ -209,10 +327,25 @@ export class EnemySpawner {
    * @returns 敌人类型
    */
   getRandomEnemyType(): EnemyType {
-    const totalWeight = Array.from(this.enemyTypeWeights.values()).reduce((a, b) => a + b, 0)
-    let random = Math.random() * totalWeight
+    // 只考虑已解锁的敌人类型
+    const availableTypes = new Map<EnemyType, number>()
+    let totalWeight = 0
 
     for (const [type, weight] of this.enemyTypeWeights) {
+      if (this.unlockedEnemyTypes.has(type)) {
+        availableTypes.set(type, weight)
+        totalWeight += weight
+      }
+    }
+
+    // 如果没有可用类型，返回默认类型
+    if (totalWeight === 0) {
+      return EnemyType.SOLDIER
+    }
+
+    let random = Math.random() * totalWeight
+
+    for (const [type, weight] of availableTypes) {
       random -= weight
       if (random <= 0) {
         return type
