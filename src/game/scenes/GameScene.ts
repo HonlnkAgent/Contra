@@ -261,14 +261,14 @@ export class GameScene extends Phaser.Scene {
     // 更新难度（无限模式）
     this.levelManager.updateDifficulty(this.player.score)
 
+    // 清理已销毁的关卡实体
+    this.levelManager.cleanup()
+
     // 更新所有子弹
     this.updateBullets(time)
 
     // 清理已销毁的子弹
     this.cleanupBullets()
-
-    // 清理已销毁的关卡实体
-    this.levelManager.cleanup()
   }
 
   /**

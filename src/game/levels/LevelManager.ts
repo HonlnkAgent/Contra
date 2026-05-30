@@ -314,10 +314,12 @@ export class LevelManager {
   /** 更新所有关卡中的实体 */
   update(time: number, delta: number): void {
     if (this.isInfiniteMode && this.enemySpawner) {
-      // 无限模式：更新敌人生成器
-      this.enemySpawner.cleanup()
+      this.enemySpawner.getEnemyEntities().forEach((enemy) => {
+        if (enemy.sprite.active) {
+          enemy.update(time, delta)
+        }
+      })
     } else {
-      // 非无限模式：更新固定敌人
       this.enemyEntities.forEach((enemy) => {
         if (enemy.sprite.active) {
           enemy.update(time, delta)
