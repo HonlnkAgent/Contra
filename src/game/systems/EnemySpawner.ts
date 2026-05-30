@@ -3,13 +3,13 @@
  * 根据难度和游戏状态动态生成敌人
  */
 import Phaser from 'phaser'
-import { EnemyType, Direction } from '../../types/game'
+import { EnemyType } from '../../types/game'
 import { Player } from '../entities/Player'
 import { Enemy } from '../entities/Enemy'
 import { SoldierEnemy } from '../entities/SoldierEnemy'
 import { MachineGunnerEnemy } from '../entities/MachineGunnerEnemy'
 import { JumperEnemy } from '../entities/JumperEnemy'
-import { GAME_WIDTH, GAME_HEIGHT, WORLD_WIDTH } from '../config/GameConstants'
+import { GAME_HEIGHT, WORLD_WIDTH } from '../config/GameConstants'
 
 /** 生成配置接口 */
 interface SpawnConfig {
