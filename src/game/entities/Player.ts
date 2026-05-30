@@ -32,6 +32,10 @@ export class Player {
   private lastFireTime: number = 0
   private currentFireRate: number = PLAYER.FIRE_RATE
 
+  /** 跳跃控制 */
+  private jumpCount: number = 0
+  private maxJumps: number = 2
+
   /** 无敌计时器 */
   private invincibleTimer: Phaser.Time.TimerEvent | null = null
 
@@ -83,7 +87,13 @@ export class Player {
   /** 更新地面状态 */
   private updateGroundState(): void {
     const body = this.sprite.body as Phaser.Physics.Arcade.Body
+    const wasOnGround = this.isOnGround
     this.isOnGround = body.blocked.down || body.touching.down
+
+    // 着地时重置跳跃次数
+    if (this.isOnGround && !wasOnGround) {
+      this.jumpCount = 0
+    }
   }
 
   /** 更新玩家动画状态 */
@@ -121,12 +131,19 @@ export class Player {
     }
   }
 
-  /** 跳跃 */
+  /** 跳跃（支持二段跳） */
   jump(): void {
-    if (!this.isOnGround) return
+    // 在地面上重置跳跃次数
+    if (this.isOnGround) {
+      this.jumpCount = 0
+    }
+
+    // 检查是否还能跳跃
+    if (this.jumpCount >= this.maxJumps) return
 
     const body = this.sprite.body as Phaser.Physics.Arcade.Body
     body.setVelocityY(PLAYER.JUMP_VELOCITY)
+    this.jumpCount++
     this.isOnGround = false
     eventBus.emit(GameEvents.PLAYER_JUMP)
   }

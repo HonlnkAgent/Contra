@@ -54,12 +54,14 @@ export class GameScene extends Phaser.Scene {
       classType: Phaser.Physics.Arcade.Sprite,
       maxSize: 30,
       runChildUpdate: false,
+      allowGravity: false,
     })
 
     this.enemyBullets = this.physics.add.group({
       classType: Phaser.Physics.Arcade.Sprite,
       maxSize: 50,
       runChildUpdate: false,
+      allowGravity: false,
     })
 
     // 加载关卡
