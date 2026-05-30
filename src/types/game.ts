@@ -47,6 +47,13 @@ export enum EnemyType {
   SHIELD = 'shield',
 }
 
+/** BOSS类型 */
+export enum BossType {
+  HELICOPTER = 'helicopter',
+  MECHA = 'mecha',
+  NEST = 'nest',
+}
+
 /** 游戏配置接口 */
 export interface GameConfigData {
   width: number

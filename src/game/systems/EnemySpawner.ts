@@ -1,9 +1,9 @@
 /**
  * 敌人生成器 - 负责无限模式下敌人生成逻辑
- * 根据难度和游戏状态动态生成敌人
+ * 根据难度和游戏状态动态生成敌人和 BOSS
  */
 import Phaser from 'phaser'
-import { EnemyType } from '../../types/game'
+import { EnemyType, BossType } from '../../types/game'
 import { Player } from '../entities/Player'
 import { Enemy } from '../entities/Enemy'
 import { SoldierEnemy } from '../entities/SoldierEnemy'
@@ -14,16 +14,14 @@ import { SniperEnemy } from '../entities/SniperEnemy'
 import { BomberEnemy } from '../entities/BomberEnemy'
 import { FlyerEnemy } from '../entities/FlyerEnemy'
 import { ShieldEnemy } from '../entities/ShieldEnemy'
+import { Boss } from '../entities/Boss'
+import { BossHelicopter } from '../entities/BossHelicopter'
+import { BossMecha } from '../entities/BossMecha'
+import { BossNest } from '../entities/BossNest'
 import { GAME_HEIGHT, WORLD_WIDTH, ENEMY } from '../config/GameConstants'
 
-/** 生成配置接口 */
-interface SpawnConfig {
-  spawnInterval: number
-  minSpawnInterval: number
-  maxEnemies: number
-  difficultyIncreaseRate: number
-  enemyTypeWeights: Map<EnemyType, number>
-}
+/** BOSS 生成间隔（分数） */
+const BOSS_SPAWN_SCORE_INTERVAL = 10000
 
 export class EnemySpawner {
   private scene: Phaser.Scene
@@ -64,6 +62,15 @@ export class EnemySpawner {
 
   /** 敌人实体管理 */
   private enemyEntities: Enemy[] = []
+
+  /** BOSS 管理 */
+  private activeBoss: Boss | null = null
+  private lastBossScore: number = 0 // 上次生成 BOSS 时的分数
+  private bossTypes: BossType[] = [
+    BossType.HELICOPTER,
+    BossType.MECHA,
+    BossType.NEST,
+  ]
 
   /**
    * 构造函数
@@ -219,12 +226,15 @@ export class EnemySpawner {
   }
 
   /**
-   * 更新难度
+   * 更新难度和检查 BOSS 生成
    * @param score 当前分数
    */
   updateDifficulty(score: number): void {
     // 检查解锁新敌人类型
     this.checkEnemyUnlocks(score)
+
+    // 检查是否需要生成 BOSS
+    this.checkBossSpawn(score)
 
     // 根据分数计算难度等级
     const newDifficulty = Math.floor(score / 1000) * this.difficultyIncreaseRate + 1
@@ -254,6 +264,86 @@ export class EnemySpawner {
         })
       }
     }
+  }
+
+  /**
+   * 检查是否需要生成 BOSS
+   * @param score 当前分数
+   */
+  private checkBossSpawn(score: number): void {
+    // 如果已有活跃 BOSS，不生成新的
+    if (this.activeBoss && this.activeBoss.sprite.active) {
+      return
+    }
+
+    // 检查是否达到 BOSS 生成分数间隔
+    const nextBossScore = this.lastBossScore + BOSS_SPAWN_SCORE_INTERVAL
+    if (score >= nextBossScore && score > 0) {
+      this.lastBossScore = score
+      this.spawnBoss()
+    }
+  }
+
+  /**
+   * 生成 BOSS
+   */
+  private spawnBoss(): void {
+    // 随机选择 BOSS 类型
+    const randomIndex = Math.floor(Math.random() * this.bossTypes.length)
+    const bossType = this.bossTypes[randomIndex]
+
+    // 计算生成位置（在玩家前方）
+    const playerX = this.player.sprite.x
+    const spawnDirection = Math.random() > 0.5 ? 1 : -1
+    const spawnDistance = 400 + Math.random() * 200
+    let spawnX = playerX + spawnDirection * spawnDistance
+
+    // 确保在世界范围内
+    spawnX = Phaser.Math.Clamp(spawnX, 100, WORLD_WIDTH - 100)
+    const spawnY = GAME_HEIGHT - 200
+
+    // 创建 BOSS
+    let boss: Boss
+    switch (bossType) {
+      case BossType.HELICOPTER:
+        boss = new BossHelicopter(this.scene, spawnX, spawnY, this.enemyBullets)
+        break
+      case BossType.MECHA:
+        boss = new BossMecha(this.scene, spawnX, spawnY, this.enemyBullets)
+        break
+      case BossType.NEST:
+        boss = new BossNest(
+          this.scene,
+          spawnX,
+          spawnY,
+          this.enemyBullets,
+          this.enemies,
+          this.enemyBullets
+        )
+        break
+      default:
+        boss = new BossHelicopter(this.scene, spawnX, spawnY, this.enemyBullets)
+    }
+
+    // 设置玩家引用
+    boss.setPlayerRef(this.player.sprite)
+
+    // 添加到管理
+    this.enemies.add(boss.sprite)
+    this.enemyEntities.push(boss)
+    this.activeBoss = boss
+
+    // 暂停普通敌人生成（BOSS 战期间）
+    this.stop()
+
+    // 5秒后恢复普通敌人生成（较少数量）
+    this.scene.time.delayedCall(5000, () => {
+      if (this.activeBoss && this.activeBoss.sprite.active) {
+        this.maxEnemies = 5 // BOSS 战期间减少敌人数量
+        this.spawnInterval = 5000 // 增加生成间隔
+        this.start()
+      }
+    })
   }
 
   /**
@@ -388,6 +478,17 @@ export class EnemySpawner {
   }
 
   /**
+   * 获取当前活跃的 BOSS
+   * @returns BOSS 实例或 null
+   */
+  getActiveBoss(): Boss | null {
+    if (this.activeBoss && this.activeBoss.sprite.active) {
+      return this.activeBoss
+    }
+    return null
+  }
+
+  /**
    * 获取所有活跃的敌人实体
    * @returns 活跃敌人数组
    */
@@ -400,6 +501,21 @@ export class EnemySpawner {
    */
   cleanup(): void {
     this.enemyEntities = this.enemyEntities.filter((e) => e.sprite.active)
+
+    // 检查 BOSS 是否还活着
+    if (this.activeBoss && !this.activeBoss.sprite.active) {
+      this.activeBoss = null
+
+      // BOSS 死亡后恢复正常的敌人生成
+      this.maxEnemies = 10 + Math.floor(this.difficulty / 2)
+      this.spawnInterval = Math.max(
+        this.minSpawnInterval,
+        3000 - (this.difficulty - 1) * 200
+      )
+      if (!this.spawnTimer) {
+        this.start()
+      }
+    }
   }
 
   /**
@@ -409,5 +525,6 @@ export class EnemySpawner {
     this.stop()
     this.enemyEntities.forEach((e) => e.destroy())
     this.enemyEntities = []
+    this.activeBoss = null
   }
 }
