@@ -83,6 +83,7 @@ export class ShieldEnemy extends Enemy {
     )
 
     this.bullets.add(bullet.sprite)
+    bullet.activate()  // 激活子弹，设置速度
     eventBus.emit(GameEvents.ENEMY_SHOOT, {
       x: this.sprite.x + offsetX,
       y: this.sprite.y - 4,

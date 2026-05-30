@@ -66,6 +66,7 @@ export class MachineGunnerEnemy extends Enemy {
         )
 
         this.bullets.add(bullet.sprite)
+        bullet.activate()  // 激活子弹，设置速度
       })
     }
 
