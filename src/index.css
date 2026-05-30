@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-contra-darker text-white font-pixel;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  * {
+    @apply box-border;
+  }
+}
+
+@layer components {
+  .btn-contra {
+    @apply px-6 py-3 bg-contra-primary text-black font-pixel text-sm
+           border-2 border-white cursor-pointer transition-all duration-200
+           hover:bg-contra-secondary hover:scale-105 active:scale-95;
+  }
+
+  .btn-contra-danger {
+    @apply px-6 py-3 bg-contra-danger text-white font-pixel text-sm
+           border-2 border-white cursor-pointer transition-all duration-200
+           hover:bg-red-700 hover:scale-105 active:scale-95;
+  }
+
+  .text-contra-glow {
+    text-shadow: 0 0 10px rgba(0, 255, 0, 0.8), 0 0 20px rgba(0, 255, 0, 0.4);
+  }
+
+  .pixel-border {
+    @apply border-4 border-white;
+    image-rendering: pixelated;
+  }
+}
