@@ -73,15 +73,20 @@ export class Bullet {
     this.sprite.setDepth(5)
     this.sprite.setData('entity', this)
 
-    // 设置子弹速度
-    const velocityX = direction === Direction.RIGHT ? this.speed : -this.speed
-    this.sprite.body!.setVelocityX(velocityX)
+    // 禁用重力
     this.sprite.body!.setAllowGravity(false)
 
     // 根据方向翻转精灵
     this.sprite.setFlipX(direction === Direction.LEFT)
 
     this.spawnTime = scene.time.now
+  }
+
+  /** 激活子弹 - 在添加到物理组后调用，设置速度 */
+  activate(): void {
+    const velocityX = this.direction === Direction.RIGHT ? this.speed : -this.speed
+    this.sprite.body!.setVelocityX(velocityX)
+    this.sprite.body!.setAllowGravity(false)
   }
 
   /**

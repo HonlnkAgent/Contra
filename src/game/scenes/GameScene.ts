@@ -167,16 +167,19 @@ export class GameScene extends Phaser.Scene {
     const bullet = new Bullet(this, x, y, direction, true, weapon)
     this.playerBullets.add(bullet.sprite)
     this.bulletEntities.push(bullet)
+    bullet.activate()  // 添加到组后激活，设置速度
 
     // 散弹模式：额外发射两颗子弹
     if (weapon === WeaponType.SPREAD) {
       const bullet2 = new Bullet(this, x, y - 12, direction, true, weapon)
       this.playerBullets.add(bullet2.sprite)
       this.bulletEntities.push(bullet2)
+      bullet2.activate()
 
       const bullet3 = new Bullet(this, x, y + 12, direction, true, weapon)
       this.playerBullets.add(bullet3.sprite)
       this.bulletEntities.push(bullet3)
+      bullet3.activate()
     }
   }
 
@@ -190,6 +193,7 @@ export class GameScene extends Phaser.Scene {
     const bullet = new Bullet(this, x, y, direction, false)
     this.enemyBullets.add(bullet.sprite)
     this.bulletEntities.push(bullet)
+    bullet.activate()  // 添加到组后激活，设置速度
   }
 
   /** 随机生成道具（敌人死亡时） */
