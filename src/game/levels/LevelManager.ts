@@ -1,6 +1,7 @@
 /**
  * 关卡管理器 - 负责加载关卡数据并生成游戏世界
  * 管理平台、敌人生成、道具生成和背景渲染
+ * 支持无限模式下的随机生成
  */
 import Phaser from 'phaser'
 import {
@@ -9,13 +10,15 @@ import {
   EnemySpawnData,
   PowerUpSpawnData,
 } from '../../types/game'
-import { GAME_WIDTH, GAME_HEIGHT } from '../config/GameConstants'
+import { GAME_WIDTH, GAME_HEIGHT, WORLD_WIDTH } from '../config/GameConstants'
 import { Player } from '../entities/Player'
 import { Enemy } from '../entities/Enemy'
 import { SoldierEnemy } from '../entities/SoldierEnemy'
 import { MachineGunnerEnemy } from '../entities/MachineGunnerEnemy'
 import { JumperEnemy } from '../entities/JumperEnemy'
 import { PowerUp } from '../entities/PowerUp'
+import { EnemySpawner } from '../systems/EnemySpawner'
+import { SceneManager, SceneType } from '../systems/SceneManager'
 
 export class LevelManager {
   private scene: Phaser.Scene
@@ -29,6 +32,11 @@ export class LevelManager {
   /** 实体引用 */
   private enemyEntities: Enemy[] = []
   private powerUpEntities: PowerUp[] = []
+
+  /** 无限模式系统 */
+  private enemySpawner!: EnemySpawner
+  private sceneManager!: SceneManager
+  private isInfiniteMode: boolean = true
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene
@@ -55,16 +63,47 @@ export class LevelManager {
     this.enemies = this.scene.physics.add.group({
       allowGravity: true,
     })
-    this.spawnEnemies(levelData.enemies, player, enemyBullets)
 
     // 创建道具组
     this.powerUps = this.scene.physics.add.group({
       allowGravity: false,
     })
-    this.spawnPowerUps(levelData.powerUps)
 
     // 渲染背景
     this.renderBackground(levelData)
+
+    // 初始化无限模式系统
+    if (this.isInfiniteMode) {
+      this.initInfiniteMode(player, enemyBullets)
+    } else {
+      // 非无限模式：使用固定敌人生成
+      this.spawnEnemies(levelData.enemies, player, enemyBullets)
+      this.spawnPowerUps(levelData.powerUps)
+    }
+  }
+
+  /**
+   * 初始化无限模式
+   * @param player 玩家实例
+   * @param enemyBullets 敌人子弹组
+   */
+  private initInfiniteMode(
+    player: Player,
+    enemyBullets: Phaser.Physics.Arcade.Group
+  ): void {
+    // 初始化场景管理器
+    this.sceneManager = new SceneManager(this.scene)
+
+    // 初始化敌人生成器
+    this.enemySpawner = new EnemySpawner(
+      this.scene,
+      player,
+      enemyBullets,
+      this.enemies
+    )
+
+    // 开始生成敌人
+    this.enemySpawner.start()
   }
 
   /** 创建平台 */
@@ -88,6 +127,21 @@ export class LevelManager {
         }
       }
     })
+  }
+
+  /**
+   * 生成随机平台（无限模式）
+   * @param sceneType 场景类型
+   */
+  generateRandomPlatforms(sceneType: SceneType): void {
+    if (!this.sceneManager) return
+
+    // 清除现有平台
+    this.platforms.clear(true, true)
+
+    // 生成新平台
+    const platforms = this.sceneManager.generatePlatforms(sceneType)
+    this.createPlatforms(platforms)
   }
 
   /**
@@ -226,8 +280,29 @@ export class LevelManager {
     }
   }
 
+  /**
+   * 切换场景（无限模式）
+   * @returns 新的场景类型
+   */
+  switchScene(): SceneType | null {
+    if (!this.sceneManager) return null
+    return this.sceneManager.switchScene()
+  }
+
+  /**
+   * 更新场景背景（无限模式）
+   * @param sceneType 场景类型
+   */
+  updateSceneBackground(sceneType: SceneType): void {
+    if (!this.sceneManager) return
+    this.sceneManager.renderBackground(sceneType)
+  }
+
   /** 获取所有活跃的敌人实体 */
   getEnemyEntities(): Enemy[] {
+    if (this.isInfiniteMode && this.enemySpawner) {
+      return this.enemySpawner.getEnemyEntities()
+    }
     return this.enemyEntities.filter((e) => e.sprite.active)
   }
 
@@ -238,22 +313,47 @@ export class LevelManager {
 
   /** 更新所有关卡中的实体 */
   update(time: number, delta: number): void {
-    // 更新敌人
-    this.enemyEntities.forEach((enemy) => {
-      if (enemy.sprite.active) {
-        enemy.update(time, delta)
-      }
-    })
+    if (this.isInfiniteMode && this.enemySpawner) {
+      // 无限模式：更新敌人生成器
+      this.enemySpawner.cleanup()
+    } else {
+      // 非无限模式：更新固定敌人
+      this.enemyEntities.forEach((enemy) => {
+        if (enemy.sprite.active) {
+          enemy.update(time, delta)
+        }
+      })
+    }
+  }
+
+  /**
+   * 更新难度（无限模式）
+   * @param score 当前分数
+   */
+  updateDifficulty(score: number): void {
+    if (this.isInfiniteMode && this.enemySpawner) {
+      this.enemySpawner.updateDifficulty(score)
+    }
   }
 
   /** 清理已销毁的实体引用 */
   cleanup(): void {
-    this.enemyEntities = this.enemyEntities.filter((e) => e.sprite.active)
+    if (this.isInfiniteMode && this.enemySpawner) {
+      this.enemySpawner.cleanup()
+    } else {
+      this.enemyEntities = this.enemyEntities.filter((e) => e.sprite.active)
+    }
     this.powerUpEntities = this.powerUpEntities.filter((p) => p.sprite.active)
   }
 
   /** 销毁关卡管理器 */
   destroy(): void {
+    if (this.enemySpawner) {
+      this.enemySpawner.destroy()
+    }
+    if (this.sceneManager) {
+      this.sceneManager.destroy()
+    }
     this.enemyEntities.forEach((e) => e.destroy())
     this.powerUpEntities.forEach((p) => p.destroy())
     this.enemyEntities = []

@@ -1,6 +1,7 @@
 /**
  * 游戏状态管理 - Pinia Store
  * 管理游戏全局状态，与 Phaser 游戏状态同步
+ * 支持无限模式
  */
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
@@ -25,7 +26,6 @@ export const useGameStore = defineStore('game', () => {
   const isPlaying = computed(() => status.value === GameStatus.PLAYING)
   const isPaused = computed(() => status.value === GameStatus.PAUSED)
   const isGameOver = computed(() => status.value === GameStatus.GAME_OVER)
-  const isLevelComplete = computed(() => status.value === GameStatus.LEVEL_COMPLETE)
   const isMenu = computed(() => status.value === GameStatus.MENU)
 
   /** 开始游戏 */
@@ -66,19 +66,6 @@ export const useGameStore = defineStore('game', () => {
   /** 返回主菜单 */
   function goToMenu(): void {
     status.value = GameStatus.MENU
-  }
-
-  /** 通关 */
-  function levelComplete(finalScore: number): void {
-    status.value = GameStatus.LEVEL_COMPLETE
-    if (finalScore > highScore.value) {
-      highScore.value = finalScore
-      try {
-        localStorage.setItem('contra_high_score', String(highScore.value))
-      } catch {
-        // 静默忽略存储错误
-      }
-    }
   }
 
   /** 更新分数 */
@@ -129,10 +116,6 @@ export const useGameStore = defineStore('game', () => {
     gameOver(data.score)
   })
 
-  eventBus.on(GameEvents.LEVEL_COMPLETE, (data: { level: number; score: number }) => {
-    levelComplete(data.score)
-  })
-
   return {
     // 状态
     status,
@@ -147,7 +130,6 @@ export const useGameStore = defineStore('game', () => {
     isPlaying,
     isPaused,
     isGameOver,
-    isLevelComplete,
     isMenu,
 
     // 方法
@@ -155,7 +137,6 @@ export const useGameStore = defineStore('game', () => {
     pauseGame,
     resumeGame,
     gameOver,
-    levelComplete,
     goToMenu,
     updateScore,
     setGameReady,

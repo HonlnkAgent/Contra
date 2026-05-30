@@ -2,6 +2,7 @@
  * 主游戏场景 - 游戏的核心场景
  * 集成所有游戏系统：玩家、敌人、子弹、碰撞、关卡、道具
  * 管理游戏主循环和状态更新
+ * 支持无限模式
  */
 import Phaser from 'phaser'
 import { GameStatus, Direction, WeaponType, PowerUpType } from '../../types/game'
@@ -36,6 +37,10 @@ export class GameScene extends Phaser.Scene {
 
   /** 子弹实体管理 */
   private bulletEntities: Bullet[] = []
+
+  /** 场景切换控制 */
+  private sceneSwitchDistance: number = 2000 // 切换场景的距离
+  private lastSceneSwitchX: number = 0
 
   constructor() {
     super({ key: 'GameScene' })
@@ -98,6 +103,9 @@ export class GameScene extends Phaser.Scene {
 
     // 加载关卡
     this.levelManager.loadLevel(levelData, this.player, this.enemyBullets)
+
+    // 初始化场景切换位置
+    this.lastSceneSwitchX = this.player.sprite.x
   }
 
   /** 设置碰撞检测 */
@@ -147,12 +155,6 @@ export class GameScene extends Phaser.Scene {
     // 监听游戏结束
     eventBus.on(GameEvents.GAME_OVER, () => {
       this.gameStatus = GameStatus.GAME_OVER
-      this.scene.pause()
-    })
-
-    // 监听通关事件
-    eventBus.on(GameEvents.LEVEL_COMPLETE, () => {
-      this.gameStatus = GameStatus.LEVEL_COMPLETE
       this.scene.pause()
     })
   }
@@ -253,8 +255,11 @@ export class GameScene extends Phaser.Scene {
     // 更新关卡（敌人等）
     this.levelManager.update(time, delta)
 
-    // 检查是否通关（所有敌人消灭）
-    this.checkLevelComplete()
+    // 检查是否需要切换场景（无限模式）
+    this.checkSceneSwitch()
+
+    // 更新难度（无限模式）
+    this.levelManager.updateDifficulty(this.player.score)
 
     // 更新所有子弹
     this.updateBullets(time)
@@ -264,6 +269,29 @@ export class GameScene extends Phaser.Scene {
 
     // 清理已销毁的关卡实体
     this.levelManager.cleanup()
+  }
+
+  /**
+   * 检查是否需要切换场景（无限模式）
+   */
+  private checkSceneSwitch(): void {
+    const playerX = this.player.sprite.x
+    const distanceTraveled = Math.abs(playerX - this.lastSceneSwitchX)
+
+    if (distanceTraveled >= this.sceneSwitchDistance) {
+      // 切换场景
+      const newSceneType = this.levelManager.switchScene()
+      if (newSceneType) {
+        // 生成新的随机平台
+        this.levelManager.generateRandomPlatforms(newSceneType)
+
+        // 更新场景背景
+        this.levelManager.updateSceneBackground(newSceneType)
+
+        // 更新最后切换位置
+        this.lastSceneSwitchX = playerX
+      }
+    }
   }
 
   /** 处理玩家输入 */
@@ -300,17 +328,6 @@ export class GameScene extends Phaser.Scene {
     this.bulletEntities = this.bulletEntities.filter(
       (bullet) => bullet.sprite.active
     )
-  }
-
-  /** 检查是否通关 */
-  private checkLevelComplete(): void {
-    const activeEnemies = this.levelManager.getEnemyEntities()
-    if (activeEnemies.length === 0) {
-      eventBus.emit(GameEvents.LEVEL_COMPLETE, {
-        level: this.currentLevel,
-        score: this.player.score,
-      })
-    }
   }
 
   /** 销毁场景时的清理 */

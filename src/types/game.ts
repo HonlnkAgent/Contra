@@ -16,7 +16,6 @@ export enum GameStatus {
   PLAYING = 'playing',
   PAUSED = 'paused',
   GAME_OVER = 'gameover',
-  LEVEL_COMPLETE = 'level_complete',
 }
 
 /** 武器类型 */

@@ -46,7 +46,6 @@ export const GameEvents = {
   GAME_PAUSE: 'game:pause',
   GAME_RESUME: 'game:resume',
   GAME_OVER: 'game:over',
-  LEVEL_COMPLETE: 'level:complete',
   LEVEL_START: 'level:start',
 
   // UI 事件
