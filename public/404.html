@@ -4,17 +4,8 @@
   <meta charset="utf-8">
   <title>Redirecting...</title>
   <script>
-    // GitHub Pages SPA 重定向
-    // 将路径作为查询参数保存到 index.html
-    var pathSegmentsToKeep = 1; // 保留 'Contra' 路径段
-    var l = window.location;
-    l.replace(
-      l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-      l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
-      l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
-      (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-      l.hash
-    );
+    // GitHub Pages SPA 重定向 - 刷新时回到首页
+    window.location.replace('/Contra/');
   </script>
 </head>
 <body>
