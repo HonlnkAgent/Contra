@@ -89,9 +89,8 @@ export class PreloadScene extends Phaser.Scene {
     gfx.fillRect(x, y, width, height)
   }
 
-  private outline(gfx: Phaser.GameObjects.Graphics, width: number, height: number): void {
-    gfx.lineStyle(2, 0x0b1020, 0.95)
-    gfx.strokeRect(1, 1, width - 2, height - 2)
+  private outline(_gfx: Phaser.GameObjects.Graphics, _width: number, _height: number): void {
+    // 纯像素剪影模式：不绘制描边
   }
 
   private generatePlayerTextures(): void {
@@ -249,8 +248,7 @@ export class PreloadScene extends Phaser.Scene {
       this.rect(gfx, 2, 8, 28, 3, 0x70767b)
       this.rect(gfx, 3, 16, 26, 2, 0x41464a)
       this.rect(gfx, 5, 24, 22, 2, 0x41464a)
-      gfx.lineStyle(1, 0x2a2f33, 0.8)
-      gfx.strokeRect(0, 0, 32, 32)
+      // 平台不描边，保持纯像素风格
     })
   }
 
@@ -267,10 +265,7 @@ export class PreloadScene extends Phaser.Scene {
       this.makeCanvasTexture(key, 24, 24, (gfx) => {
         this.rect(gfx, 2, 2, 20, 20, color)
         this.rect(gfx, 5, 5, 14, 14, 0x101020, 0.35)
-        gfx.lineStyle(2, 0xffffff, 1)
-        gfx.strokeRect(2, 2, 20, 20)
-        gfx.lineStyle(1, 0x111111, 1)
-        gfx.strokeRect(0, 0, 24, 24)
+        // 道具不额外描边，保持纯像素剪影
         this.drawPowerUpMark(gfx, mark)
       })
     })
