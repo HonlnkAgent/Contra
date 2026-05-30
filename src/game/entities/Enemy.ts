@@ -28,6 +28,7 @@ export class Enemy {
 
   /** 敌人属性 */
   readonly type: EnemyType
+  protected readonly baseTextureKey: string
   health: number
   protected maxHealth: number
   protected speed: number
@@ -70,6 +71,7 @@ export class Enemy {
   ) {
     this.scene = scene
     this.type = type
+    this.baseTextureKey = textureKey
     this.health = config.health
     this.maxHealth = config.health
     this.speed = config.speed
@@ -108,6 +110,8 @@ export class Enemy {
   update(time: number, _delta: number): void {
     if (this.state === EnemyState.DEAD) return
 
+    this.updateTexture(time)
+
     // 检测玩家距离
     const distanceToPlayer = this.getDistanceToPlayer()
 
@@ -115,6 +119,23 @@ export class Enemy {
       this.onPlayerDetected(distanceToPlayer)
     } else {
       this.patrol()
+    }
+  }
+
+  protected updateTexture(time: number): void {
+    let textureKey = this.baseTextureKey
+
+    if (this.state === EnemyState.ATTACK) {
+      textureKey = `${this.baseTextureKey}_attack_0`
+    } else if (this.state === EnemyState.HURT) {
+      textureKey = `${this.baseTextureKey}_hurt_0`
+    } else {
+      const walkFrame = Math.floor(time / 180) % 2
+      textureKey = `${this.baseTextureKey}_walk_${walkFrame}`
+    }
+
+    if (this.scene.textures.exists(textureKey) && this.sprite.texture.key !== textureKey) {
+      this.sprite.setTexture(textureKey)
     }
   }
 
@@ -164,6 +185,7 @@ export class Enemy {
   /** 攻击行为 - 基础类不射击，由子类覆盖 */
   protected attack(): void {
     this.state = EnemyState.ATTACK
+    this.updateTexture(this.scene.time.now)
     // 基类只停止移动
     const body = this.sprite.body as Phaser.Physics.Arcade.Body
     body.setVelocityX(0)
@@ -177,6 +199,7 @@ export class Enemy {
     if (this.state === EnemyState.DEAD) return
 
     this.health -= amount
+    this.updateTexture(this.scene.time.now)
 
     // 受伤闪白效果
     this.sprite.setTint(0xffffff)

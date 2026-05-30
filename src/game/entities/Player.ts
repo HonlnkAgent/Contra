@@ -102,18 +102,30 @@ export class Player {
 
     if (this.health <= 0) {
       this.state = PlayerState.DEAD
+      this.setTextureIfExists('player_hurt_0')
       return
     }
 
     if (!this.isOnGround) {
       this.state = body.velocity.y < 0 ? PlayerState.JUMPING : PlayerState.FALLING
+      this.setTextureIfExists('player_jump_0')
       return
     }
 
     if (Math.abs(body.velocity.x) > 10) {
       this.state = PlayerState.RUNNING
-    } else {
+      const runFrame = Math.floor(this.scene.time.now / 140) % 2
+      this.setTextureIfExists(`player_run_${runFrame}`)
+    } else if (this.state !== PlayerState.SHOOTING) {
       this.state = PlayerState.IDLE
+      const idleFrame = Math.floor(this.scene.time.now / 450) % 2
+      this.setTextureIfExists(`player_idle_${idleFrame}`)
+    }
+  }
+
+  private setTextureIfExists(textureKey: string): void {
+    if (this.scene.textures.exists(textureKey) && this.sprite.texture.key !== textureKey) {
+      this.sprite.setTexture(textureKey)
     }
   }
 
@@ -160,6 +172,12 @@ export class Player {
 
     this.lastFireTime = now
     this.state = PlayerState.SHOOTING
+    this.setTextureIfExists('player_shoot_0')
+    this.scene.time.delayedCall(120, () => {
+      if (this.sprite.active && this.state === PlayerState.SHOOTING) {
+        this.state = PlayerState.IDLE
+      }
+    })
 
     const offsetX = this.direction === Direction.RIGHT ? 20 : -12
     const bulletX = this.sprite.x + offsetX
@@ -183,6 +201,7 @@ export class Player {
     if (this.isInvincible || this.health <= 0) return
 
     this.health = Math.max(0, this.health - amount)
+    this.setTextureIfExists('player_hurt_0')
     eventBus.emit(GameEvents.UI_UPDATE_HEALTH, this.health)
 
     if (this.health <= 0) {
