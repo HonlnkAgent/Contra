@@ -54,6 +54,7 @@ export const GameEvents = {
   UI_UPDATE_LIVES: 'ui:updateLives',
   UI_UPDATE_WEAPON: 'ui:updateWeapon',
   UI_UPDATE_BOSS_HEALTH: 'ui:updateBossHealth',
+  UI_UPDATE_SCENE: 'ui:updateScene',
 
   // 游戏引擎就绪
   GAME_READY: 'game:ready',
