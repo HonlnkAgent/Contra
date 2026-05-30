@@ -24,7 +24,18 @@ export class InputSystem {
   /** 初始化键位绑定 */
   private setupKeys(): void {
     const keyboard = this.scene.input.keyboard
-    if (!keyboard) return
+    if (!keyboard) {
+      this.keys = {
+        left: { isDown: false } as any,
+        right: { isDown: false } as any,
+        up: { isDown: false } as any,
+        down: { isDown: false } as any,
+        jump: { isDown: false } as any,
+        shoot: { isDown: false } as any,
+        pause: { isDown: false } as any,
+      }
+      return
+    }
 
     this.keys = {
       left: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT),

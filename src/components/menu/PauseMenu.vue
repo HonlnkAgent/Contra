@@ -29,7 +29,7 @@
 <script setup lang="ts">
 import { useGameStore } from '@/stores/gameStore'
 import { usePlayerStore } from '@/stores/playerStore'
-import { eventBus, GameEvents } from '@/utils/EventBus'
+
 
 const gameStore = useGameStore()
 const playerStore = usePlayerStore()
@@ -37,7 +37,6 @@ const playerStore = usePlayerStore()
 /** 恢复游戏 */
 function resumeGame(): void {
   gameStore.resumeGame()
-  eventBus.emit(GameEvents.GAME_RESUME)
 }
 
 /** 重新开始 */

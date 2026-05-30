@@ -60,7 +60,6 @@ export const useGameStore = defineStore('game', () => {
         // 静默忽略存储错误
       }
     }
-    eventBus.emit(GameEvents.GAME_OVER, { score: finalScore })
   }
 
   /** 返回主菜单 */
