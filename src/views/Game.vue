@@ -9,6 +9,9 @@
     <!-- 暂停菜单 -->
     <PauseMenu />
 
+    <!-- 通关界面 -->
+    <LevelComplete />
+
     <!-- 游戏结束界面 -->
     <GameOver />
   </div>
@@ -18,6 +21,7 @@
 import GameCanvas from '@/components/game/GameCanvas.vue'
 import GameUI from '@/components/game/GameUI.vue'
 import PauseMenu from '@/components/menu/PauseMenu.vue'
+import LevelComplete from '@/components/menu/LevelComplete.vue'
 import GameOver from '@/components/menu/GameOver.vue'
 </script>
 

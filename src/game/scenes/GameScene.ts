@@ -147,6 +147,13 @@ export class GameScene extends Phaser.Scene {
     // 监听游戏结束
     eventBus.on(GameEvents.GAME_OVER, () => {
       this.gameStatus = GameStatus.GAME_OVER
+      this.scene.pause()
+    })
+
+    // 监听通关事件
+    eventBus.on(GameEvents.LEVEL_COMPLETE, () => {
+      this.gameStatus = GameStatus.LEVEL_COMPLETE
+      this.scene.pause()
     })
   }
 
@@ -246,6 +253,9 @@ export class GameScene extends Phaser.Scene {
     // 更新关卡（敌人等）
     this.levelManager.update(time, delta)
 
+    // 检查是否通关（所有敌人消灭）
+    this.checkLevelComplete()
+
     // 更新所有子弹
     this.updateBullets(time)
 
@@ -290,6 +300,17 @@ export class GameScene extends Phaser.Scene {
     this.bulletEntities = this.bulletEntities.filter(
       (bullet) => bullet.sprite.active
     )
+  }
+
+  /** 检查是否通关 */
+  private checkLevelComplete(): void {
+    const activeEnemies = this.levelManager.getEnemyEntities()
+    if (activeEnemies.length === 0) {
+      eventBus.emit(GameEvents.LEVEL_COMPLETE, {
+        level: this.currentLevel,
+        score: this.player.score,
+      })
+    }
   }
 
   /** 销毁场景时的清理 */
