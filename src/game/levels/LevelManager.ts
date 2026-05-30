@@ -9,7 +9,7 @@ import {
   EnemySpawnData,
   PowerUpSpawnData,
 } from '../../types/game'
-import { COLORS, GAME_WIDTH, GAME_HEIGHT } from '../config/GameConstants'
+import { GAME_WIDTH, GAME_HEIGHT } from '../config/GameConstants'
 import { Player } from '../entities/Player'
 import { Enemy } from '../entities/Enemy'
 import { SoldierEnemy } from '../entities/SoldierEnemy'

@@ -8,7 +8,6 @@ import { Bullet } from '../entities/Bullet'
 import { Enemy } from '../entities/Enemy'
 import { PowerUp } from '../entities/PowerUp'
 import { eventBus, GameEvents } from '../../utils/EventBus'
-import { COLORS } from '../config/GameConstants'
 
 export class CollisionSystem {
   private scene: Phaser.Scene

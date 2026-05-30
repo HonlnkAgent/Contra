@@ -2,7 +2,7 @@
  * 关卡数据结构定义
  * 定义关卡中所有静态数据的接口
  */
-import { LevelData, EnemyType, PowerUpType, Direction } from '../../types/game'
+import { LevelData, EnemyType, PowerUpType } from '../../types/game'
 
 /**
  * 第一关卡数据
